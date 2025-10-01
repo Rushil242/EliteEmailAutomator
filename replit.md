@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 
 ## External Dependencies
 
-**Email Service**: Resend API integration for bulk email delivery (configured for 3,000 emails/month free tier). Email personalization supports {name} placeholder replacement.
+**Email Service**: Brevo API integration for bulk email delivery using @getbrevo/brevo npm package. Email personalization supports {name} placeholder replacement. Configured with TransactionalEmailsApi for sending transactional emails.
 
 **AI Service**: OpenRouter API for AI message generation using DeepSeek V3 model (free tier). Generates compliant WhatsApp and SMS marketing messages based on promotional ideas.
 

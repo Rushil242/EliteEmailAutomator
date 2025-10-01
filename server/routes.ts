@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import { insertContactSchema, insertCampaignSchema, insertAiMessageSchema } from "@shared/schema";
-import { Resend } from "resend";
+import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys } from '@getbrevo/brevo';
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -22,7 +22,10 @@ const upload = multer({
   }
 });
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const brevoApi = process.env.BREVO_API_KEY ? new TransactionalEmailsApi() : null;
+if (brevoApi && process.env.BREVO_API_KEY) {
+  brevoApi.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -134,10 +137,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let sentCount = 0;
       let failedCount = 0;
 
-      // Check if Resend API key is configured
-      if (!resend) {
+      // Check if Brevo API key is configured
+      if (!brevoApi) {
         return res.status(503).json({ 
-          error: "Email service not configured. Please add RESEND_API_KEY to environment variables." 
+          error: "Email service not configured. Please add BREVO_API_KEY to environment variables." 
         });
       }
 
@@ -145,12 +148,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const contact of validContacts) {
         try {
           const personalizedMessage = campaign.message.replace(/{name}/g, contact.name);
+          const personalizedSubject = campaign.subject.replace(/{name}/g, contact.name);
           
-          await resend.emails.send({
-            from: 'Elite IIT <noreply@eliteiit.com>',
-            to: [contact.email],
-            subject: campaign.subject.replace(/{name}/g, contact.name),
-            html: `
+          await brevoApi.sendTransacEmail({
+            sender: { name: 'Elite IIT', email: 'noreply@eliteiit.com' },
+            to: [{ email: contact.email, name: contact.name }],
+            subject: personalizedSubject,
+            htmlContent: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 ${personalizedMessage.replace(/\n/g, '<br>')}
                 <br><br>
@@ -161,7 +165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   <a href="mailto:unsubscribe@eliteiit.com">Unsubscribe</a>
                 </p>
               </div>
-            `
+            `,
+            textContent: personalizedMessage
           });
 
           await storage.createEmailResult({
