@@ -1,0 +1,315 @@
+Create a full-stack web application in Node.js for Elite IIT Coaching Institute with two main sections. This is a demo product to showcase marketing automation capabilities.
+
+Project Requirements
+Platform: Use Replit with Node.js template
+Required APIs:
+
+Resend API (free tier - 3,000 emails/month)
+
+OpenRouter API (free DeepSeek V3 access)
+
+Part 1: Bulk Email Marketing Automation Tool
+Create a comprehensive email marketing system with these specific features:
+
+File Upload System:
+
+Design a drag-and-drop file upload area that accepts Excel (.xlsx, .xls) and CSV files
+
+Allow users to click to browse files if they don't want to drag and drop
+
+Parse uploaded files using the XLSX library to extract contact information
+
+Validate that files contain required columns: Name and Email
+
+Show visual feedback when files are being processed
+
+Display error messages for invalid file formats or missing data
+
+Contact Management:
+
+After file upload, display a preview table showing the first 10 contacts
+
+Show contact validation status (valid/invalid emails)
+
+Display total count of successfully parsed contacts
+
+Store contacts temporarily in memory (no database needed for demo)
+
+Allow users to see which emails are valid and which are invalid
+
+Email Composition Interface:
+
+Create a clean email composition form with subject line and message body fields
+
+Implement a rich text area for email content creation
+
+Support dynamic placeholders, specifically {name} for personalization
+
+Show helper text explaining how to use {name} placeholder
+
+Provide sample email templates or placeholder text to guide users
+
+Include character count and basic formatting options
+
+Bulk Email Sending:
+
+Integrate with Resend API for actual email delivery
+
+Replace {name} placeholders with actual recipient names before sending
+
+Send emails in batches with small delays to respect rate limits
+
+Show real-time progress bar during email sending process
+
+Display live count of emails sent vs. total emails to send
+
+Handle sending errors gracefully and continue with remaining emails
+
+Email Campaign Results:
+
+Show detailed results after campaign completion
+
+Display success count, failure count, and total contacts
+
+List specific emails that failed with error reasons
+
+Provide summary statistics of the campaign performance
+
+Include professional email footer with Elite IIT branding and unsubscribe link
+
+Part 2: AI Marketing Message Creator for WhatsApp & SMS
+Build an intelligent message generation system with these capabilities:
+
+Message Type Selection:
+
+Create dropdown menu to choose between WhatsApp and SMS message types
+
+Apply different character limits and formatting rules based on selection
+
+SMS messages should be optimized for 160 characters
+
+WhatsApp messages can be longer but should stay under 200 characters for engagement
+
+Promotional Idea Input:
+
+Provide large text area for users to input their marketing campaign ideas
+
+Include placeholder text with examples like "20% off for Navodhaya coaching for students"
+
+Add helpful hints about what information to include for best results
+
+Support multi-line input for detailed promotion descriptions
+
+AI Integration with DeepSeek V3:
+
+Connect to OpenRouter API using DeepSeek V3 model (free tier available)
+
+Create comprehensive system prompt with Elite IIT's specific information:
+
+Institute name: Elite IIT Coaching Institute, Yelahanka, Bangalore
+
+17+ years of coaching excellence, 35,000+ students
+
+Specializations: IIT-JEE, NEET, CET, GATE, CAT preparations
+
+Multiple Bangalore locations, expert faculty with 5-15+ years experience
+
+Both online and offline classes available
+
+Compliance Integration:
+
+Program strict WhatsApp and SMS marketing compliance rules into the AI:
+
+Must include opt-out instructions like "Reply STOP to opt out"
+
+Require clear business identification in every message
+
+Focus on educational value rather than pure sales pitch
+
+Respect timing guidelines (9 AM - 9 PM IST mentions)
+
+Avoid spammy language and excessive promotional content
+
+Include call-to-action with contact information
+
+Message Generation & Display:
+
+Show loading animation while AI generates the message
+
+Display generated message in a clean, formatted text box
+
+Show real-time character count, word count, and compliance status
+
+Highlight whether message meets platform-specific requirements
+
+Use different colors for compliant vs. non-compliant messages
+
+Message Analysis Tools:
+
+Perform automatic compliance checking on generated messages
+
+Show detailed compliance checklist with pass/fail indicators:
+
+Has opt-out instruction
+
+Includes business name
+
+Within character limit
+
+Contains call-to-action
+
+Uses professional tone
+
+Display suggestions for improvement if compliance issues are found
+
+Copy & Regeneration Features:
+
+Add prominent "Copy for Interakt" button for easy transfer to WhatsApp marketing tools
+
+Include "Regenerate" button to create alternative message versions
+
+Show success notification when message is copied to clipboard
+
+Allow users to generate multiple variations of the same promotional idea
+
+User Interface Design Requirements
+Overall Layout:
+
+Create responsive two-column layout on desktop, single column on mobile
+
+Use professional blue and white color scheme suitable for educational institute
+
+Include Elite IIT branding with logo, institute name, and "Yelahanka, Bangalore" location
+
+Add "17+ Years of Excellence" tagline in header
+
+Visual Design:
+
+Use Bootstrap framework for consistent, professional styling
+
+Include relevant icons (email, AI robot, upload, etc.) for each section
+
+Implement cards layout with distinct sections for each tool
+
+Add subtle shadows and rounded corners for modern appearance
+
+Use progress bars, loading spinners, and status indicators
+
+Interactive Elements:
+
+Provide clear visual feedback for all user actions
+
+Show loading states during file processing and AI generation
+
+Display success/error messages with appropriate colors and icons
+
+Include hover effects on buttons and interactive elements
+
+Add smooth transitions and animations for better user experience
+
+Technical Implementation Details
+Backend Requirements:
+
+Set up Express.js server with proper middleware for file uploads
+
+Use Multer for handling multipart file uploads with validation
+
+Implement CORS for cross-origin requests
+
+Create RESTful API endpoints for all functionality
+
+Add proper error handling and validation for all inputs
+
+File Processing:
+
+Use SheetJS (xlsx) library to parse Excel and CSV files
+
+Validate email formats using regex patterns
+
+Clean and sanitize data before processing
+
+Handle various Excel formats and column naming variations
+
+Provide detailed error messages for parsing issues
+
+API Integration:
+
+Configure Resend API with proper authentication and error handling
+
+Set up OpenRouter API connection with DeepSeek V3 model
+
+Implement rate limiting and retry logic for external API calls
+
+Handle API failures gracefully with user-friendly error messages
+
+Frontend Functionality:
+
+Create dynamic JavaScript for real-time UI updates
+
+Implement drag-and-drop file handling with visual feedback
+
+Add client-side validation before sending requests to server
+
+Build responsive data tables for contact preview
+
+Include copy-to-clipboard functionality with browser compatibility
+
+Configuration & Setup Instructions
+Environment Setup:
+
+Create .env file with RESEND_API_KEY and OPENROUTER_API_KEY variables
+
+Configure package.json with all required dependencies
+
+Set up proper file structure with public folder for static assets
+
+Include upload directory for temporary file storage
+
+Required Dependencies:
+
+Express.js for web server
+
+Multer for file upload handling
+
+XLSX for Excel file processing
+
+Resend SDK for email sending
+
+Node.js fetch or axios for OpenRouter API calls
+
+CORS for cross-origin resource sharing
+
+Demo Features & Limitations
+Demo Scope:
+
+No user authentication or login system needed
+
+Store contacts in memory only (resets on server restart)
+
+No database integration required
+
+Basic error handling sufficient for demonstration
+
+No advanced security measures needed for demo
+
+Success Metrics:
+
+Successfully upload and parse contact files
+
+Send personalized bulk emails using Resend API
+
+Generate compliant WhatsApp/SMS messages using AI
+
+Display real-time progress and results
+
+Copy generated messages for use in external tools like Interakt
+
+User Instructions:
+
+Include clear step-by-step instructions on the website
+
+Provide sample Excel file format guidance
+
+Explain placeholder usage for email personalization
+
+Guide users on how to copy messages to Interakt platform
