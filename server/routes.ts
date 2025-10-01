@@ -286,7 +286,7 @@ The message should be professional, engaging, and fully compliant with marketing
           'X-Title': 'Elite IIT Marketing Platform'
         },
         body: JSON.stringify({
-          model: 'deepseek/deepseek-v3',
+          model: 'deepseek/deepseek-chat',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `Create a ${messageType} message for: ${promotionalIdea}` }
@@ -297,7 +297,9 @@ The message should be professional, engaging, and fully compliant with marketing
       });
 
       if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error?.message || response.statusText;
+        throw new Error(`OpenRouter API error: ${errorMessage}`);
       }
 
       const data = await response.json();
