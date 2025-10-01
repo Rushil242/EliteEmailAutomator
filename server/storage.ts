@@ -4,6 +4,8 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   // Contact methods
   createContact(contact: InsertContact): Promise<Contact>;
+  getContact(id: string): Promise<Contact | undefined>;
+  updateContact(id: string, updates: Partial<Contact>): Promise<Contact>;
   getContactsByCampaign(campaignId: string): Promise<Contact[]>;
   createManyContacts(contacts: InsertContact[]): Promise<Contact[]>;
   validateContacts(contacts: Contact[]): Promise<Contact[]>;
@@ -45,6 +47,20 @@ export class MemStorage implements IStorage {
     };
     this.contacts.set(id, contact);
     return contact;
+  }
+
+  async getContact(id: string): Promise<Contact | undefined> {
+    return this.contacts.get(id);
+  }
+
+  async updateContact(id: string, updates: Partial<Contact>): Promise<Contact> {
+    const contact = this.contacts.get(id);
+    if (!contact) {
+      throw new Error(`Contact with id ${id} not found`);
+    }
+    const updatedContact = { ...contact, ...updates };
+    this.contacts.set(id, updatedContact);
+    return updatedContact;
   }
 
   async getContactsByCampaign(campaignId: string): Promise<Contact[]> {

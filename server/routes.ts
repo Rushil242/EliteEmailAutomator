@@ -103,11 +103,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update contacts with campaign ID
       for (const contactId of contactIds) {
-        const contact = await storage.createContact({ 
-          name: '', 
-          email: '', 
-          campaignId: campaign.id,
-          isValid: true 
+        await storage.updateContact(contactId, { 
+          campaignId: campaign.id
         });
       }
 
