@@ -342,6 +342,110 @@ The message should be professional, engaging, and fully compliant with marketing
     }
   });
 
+  // Generate AI image
+  app.post("/api/generate-image", async (req, res) => {
+    try {
+      // Check if API keys are configured
+      if (!process.env.OPENROUTER_API_KEY) {
+        return res.status(503).json({ 
+          error: "AI service not configured. Please add OPENROUTER_API_KEY to environment variables." 
+        });
+      }
+
+      if (!process.env.FREEPIK_API_KEY) {
+        return res.status(503).json({ 
+          error: "Image service not configured. Please add FREEPIK_API_KEY to environment variables." 
+        });
+      }
+
+      const { imageDescription } = req.body;
+
+      if (!imageDescription || imageDescription.trim().length === 0) {
+        return res.status(400).json({ error: "Image description is required" });
+      }
+
+      // Step 1: Enhance prompt using DeepSeek
+      const enhancementSystemPrompt = `You are an expert prompt engineer specializing in Google Imagen 3 image generation. Transform simple image ideas into detailed, high-quality prompts that produce professional marketing visuals for Elite IIT Coaching Institute.
+
+ENHANCEMENT GUIDELINES:
+- Add specific visual details (lighting, composition, colors, style)
+- Include professional photography terms (shallow depth of field, golden hour, etc.)
+- Specify image quality (high resolution, sharp focus, professional photography)
+- Add relevant educational context when appropriate
+- Keep prompts under 200 words for optimal Imagen 3 performance
+- Focus on clean, modern, inspiring visuals suitable for educational marketing
+
+Transform this simple idea into a detailed Imagen 3 prompt: ${imageDescription}`;
+
+      const enhanceResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000',
+          'X-Title': 'Elite IIT Marketing Platform'
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-chat',
+          messages: [
+            { role: 'system', content: enhancementSystemPrompt },
+            { role: 'user', content: imageDescription }
+          ],
+          max_tokens: 500,
+          temperature: 0.8
+        })
+      });
+
+      if (!enhanceResponse.ok) {
+        const errorData = await enhanceResponse.json().catch(() => ({}));
+        const errorMessage = errorData.error?.message || enhanceResponse.statusText;
+        throw new Error(`Prompt enhancement error: ${errorMessage}`);
+      }
+
+      const enhanceData = await enhanceResponse.json();
+      const enhancedPrompt = enhanceData.choices[0]?.message?.content || imageDescription;
+
+      // Step 2: Generate image using Freepik API with Google Imagen 3
+      const imageResponse = await fetch('https://api.freepik.com/v1/ai/text-to-image/imagen3', {
+        method: 'POST',
+        headers: {
+          'x-freepik-api-key': process.env.FREEPIK_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt: enhancedPrompt,
+          num_images: 1,
+          aspect_ratio: 'widescreen_16_9'
+        })
+      });
+
+      if (!imageResponse.ok) {
+        const errorData = await imageResponse.json().catch(() => ({}));
+        const errorMessage = errorData.message || imageResponse.statusText;
+        throw new Error(`Image generation error: ${errorMessage}`);
+      }
+
+      const imageData = await imageResponse.json();
+      const imageUrl = imageData.data?.[0]?.url || imageData.data?.[0]?.base64 || '';
+
+      if (!imageUrl) {
+        throw new Error('No image URL returned from Freepik API');
+      }
+
+      res.json({
+        originalPrompt: imageDescription,
+        enhancedPrompt,
+        imageUrl
+      });
+
+    } catch (error) {
+      console.error('Image generation error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to generate image" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
