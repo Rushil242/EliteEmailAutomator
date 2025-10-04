@@ -1,0 +1,56 @@
+I want to add an AI-powered image generation section to my existing Elite IIT marketing automation project. The project is already connected to my GitHub repository (https://github.com/Rushil242/EliteEmailAutomator). 
+
+Add a new image generation feature below the existing AI message generator section in the ai-messages.tsx page with these exact specifications:
+
+FEATURE REQUIREMENTS:
+1. Create an "AI Image Generator" section positioned directly below the current AI message creator
+2. User input: Simple one-line text area for image description (like "Students studying in modern classroom")
+3. Two-step AI process:
+   - Step 1: Use OpenRouter API with DeepSeek model to enhance/rewrite the user's simple prompt into a detailed, professional prompt optimized for Google Imagen 3
+   - Step 2: Send the enhanced prompt to Freepik API using Google Imagen 3 model to generate the image
+4. Display the generated image with a download button
+5. Show both the original prompt and the AI-enhanced prompt for transparency
+6. Include loading states and error handling
+
+TECHNICAL IMPLEMENTATION:
+- Backend: Add new route "/api/generate-image" in routes.ts 
+- Use existing OpenRouter API integration (OPENROUTER_API_KEY already configured)
+- Add Freepik API integration using FREEPIK_API_KEY environment variable
+- Frontend: Create new component "ImageGenerator" in ai-message-creator.tsx
+- Use existing UI components (cards, buttons, inputs) for consistency
+- Follow the same error handling and toast notification patterns as message generator
+
+AI PROMPT ENHANCEMENT SYSTEM PROMPT:
+"You are an expert prompt engineer specializing in Google Imagen 3 image generation. Transform simple image ideas into detailed, high-quality prompts that produce professional marketing visuals for Elite IIT Coaching Institute.
+
+ENHANCEMENT GUIDELINES:
+- Add specific visual details (lighting, composition, colors, style)
+- Include professional photography terms (shallow depth of field, golden hour, etc.)
+- Specify image quality (high resolution, sharp focus, professional photography)
+- Add relevant educational context when appropriate
+- Keep prompts under 200 words for optimal Imagen 3 performance
+- Focus on clean, modern, inspiring visuals suitable for educational marketing
+
+Transform this simple idea into a detailed Imagen 3 prompt: [USER_INPUT]"
+
+API INTEGRATIONS:
+1. OpenRouter API: Use existing setup with model "deepseek/deepseek-chat" for prompt enhancement
+2. Freepik API: POST to https://api.freepik.com/v1/ai/text-to-image/imagen3 
+   - Headers: "x-freepik-api-key": process.env.FREEPIK_API_KEY
+   - Body: { "prompt": enhancedPrompt, "num_images": 1, "aspect_ratio": "widescreen_16_9" }
+
+UI LAYOUT:
+Position this new section as a third card below the existing AI message creator, following the same design pattern. Include:
+- Card header with robot icon and "AI Image Generator" title
+- Input field for simple image description
+- "Generate Image" button with loading state
+- Results area showing:
+  - Original prompt
+  - AI-enhanced prompt  
+  - Generated image with download button
+- Error handling with user-friendly messages
+
+ENVIRONMENT VARIABLES:
+Add FREEPIK_API_KEY to the .env file configuration
+
+Please implement this complete image generation workflow maintaining the existing code structure and design patterns from the current project.
