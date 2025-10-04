@@ -36,5 +36,10 @@ export const api = {
   generateAiMessage: async (data: { messageType: string; promotionalIdea: string }) => {
     const response = await apiRequest('POST', '/api/ai-message', data);
     return response.json();
+  },
+
+  generateImage: async (data: { imageDescription: string }) => {
+    const response = await apiRequest('POST', '/api/generate-image', data);
+    return response.json();
   }
 };
