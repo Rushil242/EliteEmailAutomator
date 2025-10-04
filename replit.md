@@ -1,8 +1,8 @@
 # Overview
 
-This is a marketing automation demonstration application for Elite IIT Coaching Institute. The application provides two main features: bulk email marketing and AI-powered message generation for WhatsApp/SMS campaigns. Built as a full-stack Node.js application, it showcases automated marketing capabilities using modern web technologies and third-party AI/email services.
+This is a marketing automation demonstration application for Elite IIT Coaching Institute. The application provides three main features: bulk email marketing, AI-powered message generation for WhatsApp/SMS campaigns, and AI-powered image generation for marketing visuals. Built as a full-stack Node.js application, it showcases automated marketing capabilities using modern web technologies and third-party AI/email services.
 
-The application allows users to upload contact lists (Excel/CSV), validate email addresses, compose personalized email campaigns, and generate compliant marketing messages for WhatsApp and SMS using AI.
+The application allows users to upload contact lists (Excel/CSV), validate email addresses, compose personalized email campaigns, generate compliant marketing messages for WhatsApp and SMS using AI, and create professional marketing images through a two-step AI enhancement process.
 
 # User Preferences
 
@@ -40,7 +40,9 @@ Preferred communication style: Simple, everyday language.
 
 **Email Service**: Brevo API integration for bulk email delivery using @getbrevo/brevo npm package. Email personalization supports {name} placeholder replacement. Configured with TransactionalEmailsApi for sending transactional emails.
 
-**AI Service**: OpenRouter API for AI message generation using DeepSeek V3 model (free tier). Generates compliant WhatsApp and SMS marketing messages based on promotional ideas.
+**AI Service**: OpenRouter API for AI message generation and image prompt enhancement using DeepSeek V3 model (free tier). Generates compliant WhatsApp and SMS marketing messages based on promotional ideas. Also enhances simple image descriptions into detailed, professional prompts optimized for Google Imagen 3.
+
+**Image Generation Service**: Freepik API integration for AI-powered image generation using Google Imagen 3 model. Accepts enhanced prompts and generates high-quality marketing visuals in widescreen 16:9 aspect ratio. Requires FREEPIK_API_KEY environment variable.
 
 **Database**: Drizzle ORM configured for @neondatabase/serverless PostgreSQL. Schema includes UUID primary keys, timestamps, and relationship fields. Database migrations stored in ./migrations directory.
 
@@ -67,3 +69,4 @@ Preferred communication style: Simple, everyday language.
 - POST /api/campaigns/:id/send - Campaign execution
 - GET /api/campaigns/:id/results - Campaign results
 - POST /api/ai-message - AI message generation
+- POST /api/generate-image - Two-step AI image generation (prompt enhancement + image creation)
