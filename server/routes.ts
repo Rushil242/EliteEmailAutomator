@@ -426,10 +426,51 @@ Transform this simple idea into a detailed Imagen 3 prompt: ${imageDescription}`
       }
 
       const imageData = await imageResponse.json();
-      const imageUrl = imageData.data?.[0]?.url || imageData.data?.[0]?.base64 || '';
+      const taskId = imageData.data?.task_id || imageData.task_id;
+
+      if (!taskId) {
+        throw new Error('No task ID returned from Freepik API');
+      }
+
+      // Poll for task completion
+      let imageUrl = '';
+      let attempts = 0;
+      const maxAttempts = 60; // 60 attempts * 2 seconds = 2 minutes max
+
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between polls
+
+        const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/imagen3/${taskId}`, {
+          method: 'GET',
+          headers: {
+            'x-freepik-api-key': process.env.FREEPIK_API_KEY
+          }
+        });
+
+        if (!statusResponse.ok) {
+          throw new Error(`Failed to check task status: ${statusResponse.statusText}`);
+        }
+
+        const statusData = await statusResponse.json();
+        const status = statusData.data?.status;
+        
+        if (status === 'COMPLETED') {
+          const generatedImages = statusData.data?.generated || [];
+          if (generatedImages.length > 0) {
+            imageUrl = generatedImages[0];
+            break;
+          } else {
+            throw new Error('Task completed but no images were generated');
+          }
+        } else if (status === 'FAILED') {
+          throw new Error('Image generation task failed');
+        }
+        
+        attempts++;
+      }
 
       if (!imageUrl) {
-        throw new Error('No image URL returned from Freepik API');
+        throw new Error('Image generation timed out after 2 minutes');
       }
 
       res.json({
