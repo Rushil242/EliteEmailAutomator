@@ -4,6 +4,8 @@ This is a marketing automation demonstration application for Elite IIT Coaching 
 
 The application allows users to upload contact lists (Excel/CSV), validate email addresses, compose personalized email campaigns, generate compliant marketing messages for WhatsApp and SMS using AI, and create professional marketing images through a two-step AI enhancement process.
 
+**Authentication**: The application now includes Supabase authentication with secure login/logout functionality. All marketing features are protected and require user authentication. The system supports up to 6 users (1 admin + 5 team members) with persistent sessions across browser sessions.
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -46,7 +48,15 @@ Preferred communication style: Simple, everyday language.
 
 **Database**: Drizzle ORM configured for @neondatabase/serverless PostgreSQL. Schema includes UUID primary keys, timestamps, and relationship fields. Database migrations stored in ./migrations directory.
 
-**Session Management**: Uses connect-pg-simple for PostgreSQL-based session storage (configured but not actively used in current demo).
+**Authentication**: Supabase authentication with @supabase/supabase-js for secure user login/logout. Features include:
+- Persistent sessions using localStorage with automatic token refresh
+- Protected routes that redirect unauthenticated users to login
+- AuthContext provider for app-wide authentication state management
+- Type-safe error handling with Supabase AuthError types
+- User email display and logout functionality in app header
+- Backend middleware for API route protection using JWT token validation
+
+**Session Management**: Uses connect-pg-simple for PostgreSQL-based session storage (configured but not actively used as Supabase handles sessions).
 
 **Development Tools**: 
 - Replit-specific plugins for runtime error overlay, cartographer, and dev banner
