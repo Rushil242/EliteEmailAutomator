@@ -1,5 +1,5 @@
 import { createServer } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import { insertCampaignSchema } from "../shared/schema.js";
