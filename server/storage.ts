@@ -1,4 +1,4 @@
-import { type Contact, type InsertContact, type Campaign, type InsertCampaign, type EmailResult, type InsertEmailResult, type AiMessage, type InsertAiMessage } from "@shared/schema";
+import { type Contact, type InsertContact, type Campaign, type InsertCampaign, type EmailResult, type InsertEmailResult, type AiMessage, type InsertAiMessage } from "../shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
