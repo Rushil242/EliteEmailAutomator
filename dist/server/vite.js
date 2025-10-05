@@ -3,9 +3,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
-import viteConfig from "../vite.config.js";
 import { nanoid } from "nanoid";
-// Fix for Node.js v18 compatibility - import.meta.dirname not available
+// FIX: Declare __dirname FIRST before using it
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const viteLogger = createLogger();
@@ -24,6 +23,16 @@ export async function setupVite(app, server) {
         hmr: { server },
         allowedHosts: true,
     };
+    // Inline vite config instead of importing
+    const viteConfig = {
+        plugins: [],
+        resolve: {
+            alias: {
+                "@": path.resolve(__dirname, "../client/src"),
+                "@shared": path.resolve(__dirname, "../shared"),
+            },
+        },
+    };
     const vite = await createViteServer({
         ...viteConfig,
         configFile: false,
@@ -41,9 +50,7 @@ export async function setupVite(app, server) {
     app.use("*", async (req, res, next) => {
         const url = req.originalUrl;
         try {
-            // FIXED: Use __dirname instead of import.meta.dirname
             const clientTemplate = path.resolve(__dirname, "..", "client", "index.html");
-            // always reload the index.html file from disk incase it changes
             let template = await fs.promises.readFile(clientTemplate, "utf-8");
             template = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
             const page = await vite.transformIndexHtml(url, template);
@@ -56,13 +63,11 @@ export async function setupVite(app, server) {
     });
 }
 export function serveStatic(app) {
-    // FIXED: Use __dirname instead of import.meta.dirname
     const distPath = path.resolve(__dirname, "public");
     if (!fs.existsSync(distPath)) {
         throw new Error(`Could not find the build directory: ${distPath}, make sure to build the client first`);
     }
     app.use(express.static(distPath));
-    // fall through to index.html if the file doesn't exist
     app.use("*", (_req, res) => {
         res.sendFile(path.resolve(distPath, "index.html"));
     });

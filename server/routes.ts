@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import * as XLSX from "xlsx";
-import { insertContactSchema, insertCampaignSchema, insertAiMessageSchema } from "../shared/schema";
+import { insertContactSchema, insertCampaignSchema, insertAiMessageSchema } from "../shared/schema.js";
 import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys } from '@getbrevo/brevo';
 
 const upload = multer({ 

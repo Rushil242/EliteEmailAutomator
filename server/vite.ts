@@ -4,10 +4,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config.js";
 import { nanoid } from "nanoid";
 
-// Fix for Node.js v18 compatibility - import.meta.dirname not available
+// FIX: Declare __dirname FIRST before using it
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -31,6 +30,17 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  // Inline vite config instead of importing
+  const viteConfig = {
+    plugins: [],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "../client/src"),
+        "@shared": path.resolve(__dirname, "../shared"),
+      },
+    },
+  };
+
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
@@ -50,7 +60,6 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
-      // FIXED: Use __dirname instead of import.meta.dirname
       const clientTemplate = path.resolve(
         __dirname,
         "..",
@@ -58,7 +67,6 @@ export async function setupVite(app: Express, server: Server) {
         "index.html",
       );
 
-      // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
@@ -74,7 +82,6 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // FIXED: Use __dirname instead of import.meta.dirname
   const distPath = path.resolve(__dirname, "public");
 
   if (!fs.existsSync(distPath)) {
@@ -85,7 +92,6 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });

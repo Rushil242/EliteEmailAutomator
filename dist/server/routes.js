@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import * as XLSX from "xlsx";
-import { insertCampaignSchema } from "../shared/schema";
+import { insertCampaignSchema } from "../shared/schema.js";
 import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys } from '@getbrevo/brevo';
 const upload = multer({
     storage: multer.memoryStorage(),
