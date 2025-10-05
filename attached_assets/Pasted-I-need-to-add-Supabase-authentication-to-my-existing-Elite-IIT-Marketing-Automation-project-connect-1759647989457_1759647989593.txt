@@ -1,0 +1,127 @@
+I need to add Supabase authentication to my existing Elite IIT Marketing Automation project (connected from GitHub: https://github.com/Rushil242/EliteEmailAutomator). 
+
+The project is built with:
+- TypeScript backend (Express.js)
+- React frontend (Vite)
+- Existing structure: client/ and server/ folders
+- Already has routes.ts, package.json, and existing API endpoints
+
+AUTHENTICATION REQUIREMENTS:
+
+1. CREATE LOGIN SYSTEM:
+   - Login page with email/password fields
+   - Professional UI matching existing design (cards, Tailwind CSS)
+   - Show error messages for invalid credentials
+   - Loading states during authentication
+   - "Remember me" functionality (persistent sessions)
+
+2. PROTECTED APPLICATION ACCESS:
+   - All existing pages (email marketing, AI message creator) should require login
+   - Redirect unauthenticated users to login page
+   - Keep users logged in across browser sessions
+   - Auto-logout only when user explicitly signs out
+
+3. USER MANAGEMENT:
+   - Support for 6 users total (1 admin + 5 team members)
+   - Users already created in Supabase dashboard manually
+   - No signup form needed (only login)
+   - Display logged-in user's email in header/navbar
+
+4. SUPABASE CONFIGURATION:
+   - Use existing Supabase credentials:
+     * SUPABASE_URL: [I'll provide my NEXT_PUBLIC_SUPABASE_URL]
+     * SUPABASE_ANON_KEY: [I'll provide my NEXT_PUBLIC_SUPABASE_ANON_KEY]
+   - Initialize Supabase client properly for TypeScript
+   - Handle auth state across the entire application
+
+TECHNICAL IMPLEMENTATION:
+
+Backend (server/):
+- Install @supabase/supabase-js package
+- Create new file: server/supabaseAuth.ts for Supabase client initialization
+- Add authentication middleware to protect API routes
+- Verify user sessions on every API request
+- Return 401 Unauthorized for unauthenticated requests
+
+Frontend (client/):
+- Install @supabase/supabase-js and @supabase/auth-ui-react
+- Create new file: client/src/lib/supabaseClient.ts
+- Create new page: client/src/pages/login.tsx with professional login form
+- Add authentication context provider (client/src/contexts/AuthContext.tsx)
+- Implement persistent session management using Supabase's built-in storage
+- Add protected route wrapper component
+- Update existing router to check authentication before rendering pages
+
+AUTHENTICATION FLOW:
+1. User visits app → Check if logged in
+2. If NOT logged in → Redirect to /login page
+3. User enters email + password → Call Supabase signInWithPassword()
+4. On success → Store session token (automatic with Supabase)
+5. Redirect to main dashboard (/email-marketing or /ai-messages)
+6. User closes browser → Session persists
+7. User returns later → Auto-login with stored session
+8. User clicks "Logout" → Clear session and redirect to login
+
+UI/UX REQUIREMENTS:
+- Login page should match existing card-based design
+- Show Elite IIT branding and logo
+- Include "Forgot password?" link (even if not functional yet)
+- Professional loading spinner during authentication
+- Toast notifications for success/error messages
+- Smooth transitions between login and authenticated states
+
+SESSION PERSISTENCE:
+- Use Supabase's localStorage strategy for persistent sessions
+- Session should survive browser close/reopen
+- Session timeout: 7 days (Supabase default)
+- Automatically refresh tokens before expiry
+
+NAVIGATION UPDATES:
+- Add "Logout" button to existing header/navbar
+- Show current user email in header
+- Hide "Create Post" and protected links when not logged in
+
+ERROR HANDLING:
+- Invalid credentials → Show "Invalid email or password"
+- Network errors → Show "Connection failed, please try again"
+- Session expired → Auto-redirect to login with message
+- Graceful fallbacks for all auth errors
+
+ENVIRONMENT VARIABLES:
+Add to .env file:
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+
+FILES TO CREATE:
+1. client/src/lib/supabaseClient.ts - Supabase client initialization
+2. client/src/contexts/AuthContext.tsx - Auth state management
+3. client/src/pages/login.tsx - Login page component
+4. client/src/components/ProtectedRoute.tsx - Route protection wrapper
+5. server/supabaseAuth.ts - Backend Supabase client
+6. server/middleware/authMiddleware.ts - API protection middleware
+
+FILES TO MODIFY:
+1. client/src/App.tsx - Add AuthContext provider and route protection
+2. client/src/pages/ai-messages.tsx - Wrap with ProtectedRoute
+3. server/routes.ts - Add auth middleware to existing endpoints
+4. package.json (both client and server) - Add Supabase dependencies
+
+SPECIFIC CODE PATTERNS TO FOLLOW:
+- Use existing toast notification system from message-generator.tsx
+- Follow existing card/button styling from ai-message-creator.tsx
+- Match loading state patterns from current components
+- Maintain TypeScript strict typing throughout
+- Use existing error handling patterns from routes.ts
+
+TESTING CHECKLIST:
+After implementation, verify:
+✓ Login with valid credentials works
+✓ Login with invalid credentials shows error
+✓ User stays logged in after browser close/reopen
+✓ Logout button clears session and redirects to login
+✓ Protected routes redirect to login when not authenticated
+✓ User email displays correctly in header
+✓ All existing functionality (email, AI message) still works
+✓ API endpoints reject unauthenticated requests
+
+Please implement this complete authentication system maintaining the existing codebase structure and design patterns. Ensure all TypeScript types are properly defined and follow the current code organization.
