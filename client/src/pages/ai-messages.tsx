@@ -1,34 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AiMessageCreator from "@/components/ai-message-creator";
-import { GraduationCap, Mail, Bot } from "lucide-react";
+import AppHeader from "@/components/AppHeader";
+import { Mail, Bot } from "lucide-react";
 import { Link } from "wouter";
 
 export default function AiMessages() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                  <GraduationCap className="text-primary-foreground text-xl" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-foreground">Elite IIT Coaching Institute</h1>
-                  <p className="text-sm text-muted-foreground">Yelahanka, Bangalore</p>
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-semibold text-primary">17+ Years of Excellence</div>
-              <div className="text-xs text-muted-foreground">35,000+ Students • Expert Faculty</div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Navigation Tabs */}
       <div className="bg-card border-b border-border">
