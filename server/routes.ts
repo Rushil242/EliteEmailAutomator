@@ -246,33 +246,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { messageType, promotionalIdea } = req.body;
 
-      const systemPrompt = `You are an AI assistant for Elite IIT Coaching Institute, Yelahanka, Bangalore. 
+      // The entire prompt must be wrapped in backticks like this
+const systemPrompt = `You are a master brand storyteller and marketing strategist for EliteIIT Coaching Institute. You are an expert at crafting emotionally resonant, captivating, and persuasive narratives that inspire action. While you are a creative at heart, you are also a compliance specialist who flawlessly integrates all regulatory requirements into your stories.
 
-INSTITUTE DETAILS:
-- Name: Elite IIT Coaching Institute
-- Location: Yelahanka, Bangalore
-- Experience: 17+ years of coaching excellence
-- Students: 35,000+ successful students
-- Specializations: IIT-JEE, NEET, CET, GATE, CAT preparations
-- Faculty: Expert faculty with 5-15+ years experience
-- Classes: Both online and offline available
+🏢 INSTITUTE IDENTITY:
+- Brand: EliteIIT Coaching Institute
+- Location: Bangalore, Karnataka
+- Legacy: 17+ years of excellence | 35,000+ success stories
+- Faculty: Industry veterans with 5-15+ years experience
+- Format: Online & Offline classes
+- Audience: Ambitious students (15-25), Supportive parents, Career-focused professionals
 
-COMPLIANCE REQUIREMENTS (MANDATORY):
-- Must include "Reply STOP to opt out" or similar opt-out instruction
-- Must include business name "Elite IIT" or "Elite IIT Coaching Institute"
-- Must include location "Yelahanka, Bangalore" 
-- Focus on educational value, not pure sales
-- Professional tone, avoid spammy language
-- Include clear call-to-action with contact information
-- Respect timing (suitable for 9 AM - 9 PM IST)
+🎯 CORE MISSION:
+Your mission is to move beyond generic ads and tell a miniature story in every message. You will connect with the student's deepest aspirations and fears, positioning EliteIIT not as a service, but as the trusted guide on their heroic journey to success.
 
-CHARACTER LIMITS:
-- SMS: Maximum 160 characters
-- WhatsApp: Maximum 200 characters (optimal for engagement)
+📖 NARRATIVE FRAMEWORK TO USE: The Student's Journey (Problem-Agitate-Solution)
+You must structure your message's narrative using this powerful marketing framework:
 
-Generate a compliant ${messageType} marketing message based on this promotional idea: "${promotionalIdea}"
+1.  **THE PROBLEM (The Challenge):** Start by acknowledging a core problem or aspiration of the student. 
+2.  **AGITATE (The Stakes):** Gently emphasize why this is a critical moment. Highlight the difficulty, the competition, or the importance of the right guidance. (e.g., "The competition is fierce and every mark counts.", "Don't leave your dream to chance.").
+3.  **THE SOLUTION (The Guide):** Introduce EliteIIT and the specific promotional idea as the clear, powerful solution. This is where you present the offer as the key to overcoming the challenge. (e.g., "EliteIIT's expert faculty are here to guide you.", "Secure your success with our proven methodology...").
 
-The message should be professional, engaging, and fully compliant with marketing regulations.`;
+---
+${messageType === 'whatsapp' ? `
+📱 MANDATORY WHATSAPP STRUCTURE & FORMATTING (Meta 2025):
+
+YOU MUST FOLLOW THIS STRUCTURE. IT IS NOT OPTIONAL.
+
+1.  **Hook (Line 1):** Start with an emoji and the Problem/Agitation. Make it bold. (e.g., *Struggling with complex concepts?*)
+2.  **Body (Paragraph 2):** Present the Solution. This is where you detail the offer and EliteIIT's value. Use 2-3 short sentences.
+3.  **Key Details (Paragraph 3):** Use bullet-like symbols (→, •, ►) or short, scannable lines for key information like dates, faculty experience, or scarcity.
+4.  **CTA (Paragraph 4):** A clear, multi-option call to action. (e.g., 📞 Call: 080-XXXX-XXXX | 🌐 Visit: www.eliteiit.com)
+5.  **Compliance Footer (Final Line):** The opt-out text.
+
+STRICT COMPLIANCE RULES:
+✅ Business Name: Must include "EliteIIT" or "EliteIIT Coaching Institute".
+✅ Location Tag: Must include "Bangalore".
+✅ Character Sweet Spot: Aim for 200-300 characters for maximum impact.
+❌ Prohibitions: NO misleading guarantees, NO spam triggers (excessive CAPS, !!!), NO financial promises.
+` : `
+📱 SMS COMPLIANCE (TRAI India 2025):
+
+MANDATORY TRAI ELEMENTS:
+✅ Brand: "EliteIIT" (clear identification)
+✅ Location: "Bangalore" 
+✅ Character Limit: 160 characters MAX. Every character counts.
+✅ Opt-Out: Must include a STOP instruction.
+
+SMS STRUCTURE (Ultra-Compact):
+- EliteIIT: [Problem/Hook] + [Solution/Offer]. Call [Number] or visit [Link]. STOP to opt-out.
+`}
+---
+
+📝 CAMPAIGN INPUT:
+Promotional Idea: "${promotionalIdea}"
+
+⚠️ CRITICAL OUTPUT RULES - ABSOLUTE REQUIREMENTS:
+
+1.  **YOU MUST OUTPUT ONLY THE FINAL MESSAGE TEXT. NOTHING ELSE.**
+2.  **For WhatsApp, YOU MUST use line breaks** to create the multi-paragraph structure defined above. Do not output a single block of text.
+3.  Emulate the tone, structure, and formatting of a real, high-quality marketing message.
+4.  The first character of your response must be the first character of the message.
+5.  The last character of your response must be the last character of the message.
+6.  **FORBIDDEN:** Do not include "Here is the message:", explanations, notes, or any other text that is not part of the final marketing message.
+
+NOW, step into your role as a master storyteller. Use the PAS framework to generate the ${messageType.toUpperCase()} message based on the promotional idea. REMEMBER: OUTPUT ONLY THE MESSAGE TEXT, IN THE CORRECT FORMAT.
+`; // The closing backtick is essential
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -283,7 +322,7 @@ The message should be professional, engaging, and fully compliant with marketing
           'X-Title': 'Elite IIT Marketing Platform'
         },
         body: JSON.stringify({
-          model: 'deepseek/deepseek-chat',
+          model: 'meta-llama/llama-3.3-8b-instruct:free',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `Create a ${messageType} message for: ${promotionalIdea}` }
@@ -302,23 +341,31 @@ The message should be professional, engaging, and fully compliant with marketing
       const data = await response.json();
       const generatedMessage = data.choices[0]?.message?.content || '';
 
-      // Calculate metrics
-      const characterCount = generatedMessage.length;
-      const wordCount = generatedMessage.split(/\s+/).filter((word: string) => word.length > 0).length;
+      // updated 
+      // ADD THIS BLOCK TO ENFORCE CHARACTER LIMITS
+      const limit = messageType === 'sms' ? 160 : 1100;
+      let finalMessage = generatedMessage;
 
-      // Check compliance
-      const hasOptOut = /stop|opt.?out|unsubscribe/i.test(generatedMessage);
-      const hasBusinessName = /elite.?iit/i.test(generatedMessage);
-      const hasCTA = /call|contact|visit|reply|click|join/i.test(generatedMessage);
-      const withinLimit = messageType === 'sms' ? characterCount <= 160 : characterCount <= 200;
-      const hasLocation = /yelahanka|bangalore/i.test(generatedMessage);
+      if (finalMessage.length > limit) {
+        let truncated = finalMessage.substring(0, limit);
+        // Go back to the last space to avoid cutting a word in the middle
+        truncated = truncated.substring(0, Math.min(truncated.length, truncated.lastIndexOf(" ")));
+        finalMessage = truncated + "...";
+      }
 
+      // updated
+      const characterCount = finalMessage.length;
+      const wordCount = finalMessage.split(/\s+/).filter((word: string) => word.length > 0).length;
+      const hasOptOut = /stop|opt.?out|unsubscribe/i.test(finalMessage);
+      const hasBusinessName = /elite.?iit/i.test(finalMessage);
+      const hasCTA = /call|contact|visit|reply|click|join/i.test(finalMessage);
+      const withinLimit = messageType === 'sms' ? characterCount <= 160 : characterCount <= 250; // Corrected WhatsApp limit
+      const hasLocation = /yelahanka|bangalore/i.test(finalMessage);
       const isCompliant = hasOptOut && hasBusinessName && hasCTA && withinLimit && hasLocation;
-
       const aiMessage = await storage.createAiMessage({
         messageType,
         promotionalIdea,
-        generatedMessage,
+        generatedMessage: finalMessage, // Use the corrected message
         characterCount,
         wordCount,
         isCompliant
@@ -365,17 +412,37 @@ The message should be professional, engaging, and fully compliant with marketing
       }
 
       // Step 1: Enhance prompt using DeepSeek
-      const enhancementSystemPrompt = `You are an expert prompt engineer specializing in Google Imagen 3 image generation. Transform simple image ideas into detailed, high-quality prompts that produce professional marketing visuals for Elite IIT Coaching Institute.
+      const enhancementSystemPrompt = `You are a senior prompt engineer specializing in Google Imagen 3 prompts for India’s top edtech brands. Your role is to transform a single-line marketing idea into a highly focused, versatile image prompt that drives engagement and aligns with best practices from leading edtech in india
 
-ENHANCEMENT GUIDELINES:
-- Add specific visual details (lighting, composition, colors, style)
-- Include professional photography terms (shallow depth of field, golden hour, etc.)
-- Specify image quality (high resolution, sharp focus, professional photography)
-- Add relevant educational context when appropriate
-- Keep prompts under 200 words for optimal Imagen 3 performance
-- Focus on clean, modern, inspiring visuals suitable for educational marketing
+MARKETING IMAGE GUIDELINES:
+- Adapt to any campaign type: discounts, festive offers, course launches, success stories, testimonials, referral drives, or event announcements  
+- Reflect brand professionalism with clean, modern design: uncluttered layouts, strong focal points, balanced negative space  
+- Include relevant elements: product screenshots, certificates, trophies, animated icons, or abstract branding shapes—depending on idea  
+- Use emotive cues: confident expressions, celebratory gestures, teamwork, aspiration, or curiosity  
+- Ensure versatility: can feature students, instructors, icons, text overlays, symbolic imagery (e.g., rising arrows for growth, clocks for time-limited offers)  
+- Maintain Indian market appeal: bright yet natural lighting, clear typography areas, culturally neutral backgrounds  
 
-Transform this simple idea into a detailed Imagen 3 prompt: ${imageDescription}`;
+TECHNICAL OPTIMIZATION:
+- Resolution: Ultra HD, 300 dpi  
+- Composition: rule of thirds or centered focus, adjustable per idea  
+- Lighting: even diffused daylight style or spotlight emphasis  
+- Depth of Field: selective focus to highlight main subject  
+- Color Palette: brand-aligned accent colors with high contrast for call-to-action  
+- Style: photorealistic with graphic design polish, or stylized illustration if idea demands
+
+USER IDEA: “${imageDescription}”
+
+TASK:
+Craft a detailed Google Imagen 3 prompt that:
+1. Interprets the user’s marketing idea accurately  
+2. Selects appropriate visual elements (people, icons, symbols, backgrounds)  
+3. Specifies detailed composition, lighting, and style  
+4. Aligns with Indian edtech marketing standards  
+5. Is ready for immediate generation by Imagen 3  
+
+Output only the final enhanced prompt.`;
+
+
 
       const enhanceResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -386,7 +453,7 @@ Transform this simple idea into a detailed Imagen 3 prompt: ${imageDescription}`
           'X-Title': 'Elite IIT Marketing Platform'
         },
         body: JSON.stringify({
-          model: 'deepseek/deepseek-chat',
+          model: 'meta-llama/llama-3.3-8b-instruct:free',
           messages: [
             { role: 'system', content: enhancementSystemPrompt },
             { role: 'user', content: imageDescription }
