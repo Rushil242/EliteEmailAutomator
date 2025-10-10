@@ -1,7 +1,7 @@
 import path from "path";
 import { fileURLToPath } from "url";
-import { defineConfig } from 'vite' // Assuming you have this import
-import react from '@vitejs/plugin-react' // Assuming you have this import
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,8 +9,9 @@ const __dirname = path.dirname(__filename);
 export default defineConfig({
   plugins: [react()],
   
-  // ADD THESE TWO LINES
-  base: './',
+  // This line was removed, as it interferes with the dev server.
+  // base: './', 
+  
   envDir: __dirname,
   
   resolve: {
@@ -19,7 +20,7 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "shared"),
     },
   },
-  root: path.resolve(__dirname, "client"),
+  root: 'client',
   build: {
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,

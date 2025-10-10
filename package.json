@@ -4,13 +4,13 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development tsx server/index.ts",
-    "build": "npm run build:server && npm run build:client",
-    "build:server": "tsc --project tsconfig.json",
-    "build:client": "vite build",
-    "start": "cross-env NODE_ENV=production node dist/server/index.js",
-    "clean": "node -e \"require('fs').rmSync('dist', {recursive:true, force:true})\""
-  },
+  "dev": "cross-env NODE_ENV=development tsx server/index.ts",
+  "build": "npm run build:server && npm run build:client",
+  "build:server": "tsc --project tsconfig.json",
+  "build:client": "vite build",
+  "start": "cross-env NODE_ENV=development tsx server/index.ts",
+  "clean": "node -e \"require('fs').rmSync('dist', {recursive:true, force:true})\""
+},
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
     "@hookform/resolvers": "^3.10.0",
