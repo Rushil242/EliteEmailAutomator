@@ -6,6 +6,8 @@ The application allows users to upload contact lists (Excel/CSV), validate email
 
 **Authentication**: The application now includes Supabase authentication with secure login/logout functionality. All marketing features are protected and require user authentication. The system supports up to 6 users (1 admin + 5 team members) with persistent sessions across browser sessions.
 
+**Deployment**: The application is configured for both Replit and Vercel deployment. See `VERCEL_DEPLOYMENT.md` for complete Vercel deployment instructions. The app uses serverless functions on Vercel (`api/index.ts`) while maintaining the traditional Express server setup for Replit development (`server/index.ts`).
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
