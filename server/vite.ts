@@ -33,6 +33,7 @@ export async function setupVite(app: Express, server: Server) {
   // Inline vite config instead of importing
   const viteConfig = {
     plugins: [],
+    root: path.resolve(__dirname, "../client"),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "../client/src"),
