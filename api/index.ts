@@ -1,5 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "../server/routes";
+import { registerRoutesServerless } from "../server/routes-serverless.js";
 
 const app = express();
 
@@ -46,23 +46,14 @@ app.use((req, res, next) => {
   next();
 });
 
-let isInitialized = false;
+// Register routes for serverless
+registerRoutesServerless(app);
 
-const initializeApp = async () => {
-  if (!isInitialized) {
-    await registerRoutes(app);
-    
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      res.status(status).json({ message });
-    });
-    
-    isInitialized = true;
-  }
-};
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  console.error('Error:', err);
+  res.status(status).json({ message });
+});
 
-export default async (req: Request, res: Response) => {
-  await initializeApp();
-  return app(req, res);
-};
+export default app;

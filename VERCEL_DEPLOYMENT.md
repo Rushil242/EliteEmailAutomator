@@ -9,8 +9,14 @@ This guide explains how to deploy your Elite IIT Marketing Automation app to Ver
 - Serverless function entry point for Vercel
 - Handles all `/api/*` routes
 - Configured to work with Vercel's serverless environment
+- Uses serverless-specific route registration
 
-### 2. `vercel.json`
+### 2. `server/routes-serverless.ts`
+- Serverless-compatible route definitions
+- Same functionality as `server/routes.ts` but without server creation
+- Optimized for Vercel's serverless functions
+
+### 3. `vercel.json`
 - Vercel configuration file
 - Routes API requests to serverless functions
 - Configures build command and output directory
