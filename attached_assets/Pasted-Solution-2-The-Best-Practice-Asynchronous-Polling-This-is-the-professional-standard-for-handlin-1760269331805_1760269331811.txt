@@ -1,0 +1,110 @@
+Solution 2: The Best Practice (Asynchronous Polling) ✅
+This is the professional standard for handling long-running tasks on any serverless platform and works on the free plan.
+
+Instead of making the server wait, we will make the server start the job and immediately give the frontend a "ticket number" (taskId). The frontend will then use that ticket to check on the job's status every few seconds.
+
+Part A: Backend Changes (in server/routes.ts)
+You need to split your single /api/generate-image endpoint into two smaller, faster ones.
+
+1. Create an Endpoint to START the Job
+This function will start the Freepik task and immediately return the taskId.
+
+TypeScript
+
+// This endpoint STARTS the image generation
+app.post("/api/generate-image/start", async (req, res) => {
+  try {
+    const { imageDescription } = req.body;
+    // ... (Your code to enhance the prompt with an LLM) ...
+    const enhancedPrompt = await enhancePromptFunction(imageDescription);
+
+    const imageResponse = await fetch('https://api.freepik.com/v1/ai/text-to-image/imagen3', {
+      // ... your Freepik API call headers and body
+      body: JSON.stringify({ prompt: enhancedPrompt, ... })
+    });
+
+    const imageData = await imageResponse.json();
+    const taskId = imageData.data?.task_id;
+
+    if (!taskId) throw new Error('Failed to get task ID from Freepik');
+
+    // Immediately send the task ID back to the frontend
+    res.json({ taskId });
+
+  } catch (error) {
+    res.status(500).json({ error: "Failed to start image generation" });
+  }
+});
+2. Create an Endpoint to CHECK the Job Status
+This function will be called by the frontend every few seconds. It does one quick check and returns the status.
+
+TypeScript
+
+// This endpoint CHECKS the status of the task
+app.get("/api/generate-image/status/:taskId", async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/imagen3/${taskId}`, {
+      // ... your Freepik API call headers
+    });
+    
+    const statusData = await statusResponse.json();
+
+    // Send the whole status object back to the frontend
+    res.json(statusData.data);
+
+  } catch (error) {
+    res.status(500).json({ error: "Failed to check task status" });
+  }
+});
+Part B: Frontend Changes (in your React component)
+Now, your React component will manage the polling.
+
+TypeScript
+
+// In your React component (e.g., image-generator.tsx)
+
+const [isLoading, setIsLoading] = useState(false);
+const [imageUrl, setImageUrl] = useState('');
+const [error, setError] = useState('');
+
+const handleGenerateImage = async () => {
+  setIsLoading(true);
+  setError('');
+  setImageUrl('');
+
+  try {
+    // Step 1: Start the generation and get the task ID
+    const startResponse = await fetch('/api/generate-image/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageDescription: 'Your prompt here' }),
+    });
+    const { taskId } = await startResponse.json();
+
+    if (!taskId) throw new Error('Did not receive a task ID.');
+
+    // Step 2: Poll for the result every 3 seconds
+    const intervalId = setInterval(async () => {
+      const statusResponse = await fetch(`/api/generate-image/status/${taskId}`);
+      const statusData = await statusResponse.json();
+
+      if (statusData.status === 'COMPLETED') {
+        clearInterval(intervalId);
+        setImageUrl(statusData.generated[0]);
+        setIsLoading(false);
+      } else if (statusData.status === 'FAILED') {
+        clearInterval(intervalId);
+        setError('Image generation failed.');
+        setIsLoading(false);
+      }
+      // If status is still PENDING, the interval will just run again
+    }, 3000);
+
+  } catch (err) {
+    setError('Failed to start the process.');
+    setIsLoading(false);
+  }
+};
+I highly recommend Solution 2. It's the correct architectural pattern for serverless environments, works on the free plan, and provides a much better user experience by allowing you to show a progress indicator on the frontend.

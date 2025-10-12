@@ -27,6 +27,23 @@ if (brevoApi && process.env.BREVO_API_KEY) {
   brevoApi.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 }
 
+// In-memory cache for image generation tasks (lazy initialization pattern)
+interface ImageTask {
+  originalPrompt: string;
+  enhancedPrompt?: string;
+  freepikTaskId?: string;
+  status: 'CREATED' | 'INITIALIZING' | 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  imageUrl?: string;
+  error?: string;
+}
+
+const imageTaskCache = new Map<string, ImageTask>();
+
+// Helper function to generate unique task IDs
+function generateTaskId(): string {
+  return `task_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // File upload and contact parsing
@@ -389,7 +406,7 @@ NOW, step into your role as a master storyteller. Use the PAS framework to gener
     }
   });
 
-  // Start image generation (returns task ID immediately)
+  // Start image generation (returns task ID immediately - LAZY INITIALIZATION)
   app.post("/api/generate-image/start", async (req, res) => {
     try {
       if (!process.env.FREEPIK_API_KEY) {
@@ -410,7 +427,71 @@ NOW, step into your role as a master storyteller. Use the PAS framework to gener
         return res.status(400).json({ error: "Image description is required" });
       }
 
-      const promptEnhancementSystemPrompt = `You are an expert AI image prompt engineer specializing in Google Imagen 3. Your task is to transform simple user descriptions into detailed, professional prompts optimized for Google Imagen 3's text-to-image generation.
+      // Generate task ID and store minimal info - INSTANT RESPONSE
+      const taskId = generateTaskId();
+      
+      imageTaskCache.set(taskId, {
+        originalPrompt: imageDescription,
+        status: 'CREATED'
+      });
+
+      console.log(`Image task created: ${taskId} - Will initialize on first status check`);
+
+      // Return immediately - actual processing happens on first status check
+      res.json({
+        taskId,
+        originalPrompt: imageDescription,
+        enhancedPrompt: '', // Will be populated on first status check
+        status: 'CREATED'
+      });
+
+    } catch (error) {
+      console.error('Image generation start error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to start image generation" 
+      });
+    }
+  });
+
+  // Check image generation status (with LAZY INITIALIZATION)
+  app.get("/api/generate-image/status/:taskId", async (req, res) => {
+    try {
+      if (!process.env.FREEPIK_API_KEY) {
+        return res.status(503).json({ 
+          error: "Image generation service not configured." 
+        });
+      }
+
+      if (!process.env.OPENROUTER_API_KEY) {
+        return res.status(503).json({ 
+          error: "AI service not configured." 
+        });
+      }
+
+      const { taskId } = req.params;
+
+      if (!taskId) {
+        return res.status(400).json({ error: "Task ID is required" });
+      }
+
+      // Get task from cache
+      const task = imageTaskCache.get(taskId);
+
+      if (!task) {
+        return res.status(404).json({ 
+          status: 'ERROR',
+          error: 'Task not found. It may have expired.' 
+        });
+      }
+
+      // LAZY INITIALIZATION: If task is in CREATED state, initialize it now
+      if (task.status === 'CREATED') {
+        task.status = 'INITIALIZING';
+        console.log(`Initializing task ${taskId}...`);
+
+        try {
+          // Step 1: Enhance prompt using OpenRouter
+          const promptEnhancementSystemPrompt = `You are an expert AI image prompt engineer specializing in Google Imagen 3. Your task is to transform simple user descriptions into detailed, professional prompts optimized for Google Imagen 3's text-to-image generation.
 
 GOOGLE IMAGEN 3 CHARACTERISTICS:
 - Excels at photorealistic imagery and artistic styles
@@ -449,163 +530,166 @@ Enhanced: "Joyful students celebrating academic success, throwing graduation cap
 
 Now, enhance the following user description into a Google Imagen 3 optimized prompt:`;
 
-      // Step 1: Enhance prompt using OpenRouter
-      const promptResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000',
-          'X-Title': 'Elite IIT Marketing Platform'
-        },
-        body: JSON.stringify({
-          model: 'meta-llama/llama-3.3-8b-instruct:free',
-          messages: [
-            { role: 'system', content: promptEnhancementSystemPrompt },
-            { role: 'user', content: imageDescription }
-          ],
-          temperature: 0.8,
-          max_tokens: 300
-        })
-      });
+          const promptResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000',
+              'X-Title': 'Elite IIT Marketing Platform'
+            },
+            body: JSON.stringify({
+              model: 'meta-llama/llama-3.3-8b-instruct:free',
+              messages: [
+                { role: 'system', content: promptEnhancementSystemPrompt },
+                { role: 'user', content: task.originalPrompt }
+              ],
+              temperature: 0.8,
+              max_tokens: 300
+            })
+          });
 
-      if (!promptResponse.ok) {
-        const errorText = await promptResponse.text();
-        throw new Error(`Prompt enhancement failed: ${promptResponse.statusText} - ${errorText}`);
-      }
+          if (!promptResponse.ok) {
+            const errorText = await promptResponse.text();
+            throw new Error(`Prompt enhancement failed: ${promptResponse.statusText} - ${errorText}`);
+          }
 
-      const promptData = await promptResponse.json();
-      const enhancedPrompt = promptData.choices[0]?.message?.content || imageDescription;
+          const promptData = await promptResponse.json();
+          const enhancedPrompt = promptData.choices[0]?.message?.content || task.originalPrompt;
+          task.enhancedPrompt = enhancedPrompt;
 
-      // Step 2: Submit to Freepik API
-      const imageResponse = await fetch('https://api.freepik.com/v1/ai/text-to-image/imagen3', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'x-freepik-api-key': process.env.FREEPIK_API_KEY
-        },
-        body: JSON.stringify({
-          prompt: enhancedPrompt,
-          num_images: 1,
-          aspect_ratio: 'widescreen_16_9',
-          styling: {
-            style: 'photo'
-          },
-          person_generation: 'allow_adult',
-          safety_settings: 'block_medium_and_above'
-        })
-      });
+          // Step 2: Submit to Freepik API
+          const imageResponse = await fetch('https://api.freepik.com/v1/ai/text-to-image/imagen3', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'x-freepik-api-key': process.env.FREEPIK_API_KEY
+            },
+            body: JSON.stringify({
+              prompt: enhancedPrompt,
+              num_images: 1,
+              aspect_ratio: 'widescreen_16_9',
+              styling: {
+                style: 'photo'
+              },
+              person_generation: 'allow_adult',
+              safety_settings: 'block_medium_and_above'
+            })
+          });
 
-      if (!imageResponse.ok) {
-        const errorText = await imageResponse.text();
-        console.error('Freepik API error response:', errorText);
-        throw new Error(`Freepik API error: ${imageResponse.status} - ${errorText}`);
-      }
+          if (!imageResponse.ok) {
+            const errorText = await imageResponse.text();
+            console.error('Freepik API error response:', errorText);
+            throw new Error(`Freepik API error: ${imageResponse.status} - ${errorText}`);
+          }
 
-      const imageData = await imageResponse.json();
-      console.log('Freepik API response:', JSON.stringify(imageData));
-      
-      const taskId = imageData.data?.task_id;
-      const taskStatus = imageData.data?.status;
+          const imageData = await imageResponse.json();
+          console.log('Freepik API response:', JSON.stringify(imageData));
+          
+          const freepikTaskId = imageData.data?.task_id;
+          const taskStatus = imageData.data?.status;
 
-      if (!taskId) {
-        console.error('Freepik response structure:', imageData);
-        throw new Error(`No task ID received from Freepik API. Response: ${JSON.stringify(imageData)}`);
-      }
+          if (!freepikTaskId) {
+            console.error('Freepik response structure:', imageData);
+            throw new Error(`No task ID received from Freepik API. Response: ${JSON.stringify(imageData)}`);
+          }
 
-      console.log(`Image generation started. Task ID: ${taskId}, Status: ${taskStatus}`);
+          task.freepikTaskId = freepikTaskId;
+          task.status = taskStatus === 'COMPLETED' ? 'COMPLETED' : 'PENDING';
 
-      // Return immediately with task ID and prompts (client will pass these during polling)
-      res.json({
-        taskId,
-        originalPrompt: imageDescription,
-        enhancedPrompt,
-        status: taskStatus || 'PENDING'
-      });
+          console.log(`Task ${taskId} initialized successfully. Freepik task: ${freepikTaskId}, Status: ${taskStatus}`);
 
-    } catch (error) {
-      console.error('Image generation start error:', error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to start image generation" 
-      });
-    }
-  });
-
-  // Check image generation status (stateless - no cache dependency)
-  app.get("/api/generate-image/status/:taskId", async (req, res) => {
-    try {
-      if (!process.env.FREEPIK_API_KEY) {
-        return res.status(503).json({ 
-          error: "Image generation service not configured." 
-        });
-      }
-
-      const { taskId } = req.params;
-
-      if (!taskId) {
-        return res.status(400).json({ error: "Task ID is required" });
-      }
-
-      // Check status from Freepik (no cache dependency for serverless compatibility)
-      const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/imagen3/${taskId}`, {
-        headers: {
-          'Accept': 'application/json',
-          'x-freepik-api-key': process.env.FREEPIK_API_KEY
-        }
-      });
-
-      if (!statusResponse.ok) {
-        // Handle rate limiting
-        if (statusResponse.status === 429) {
-          return res.status(429).json({ 
-            status: 'RATE_LIMITED',
-            error: 'Rate limit exceeded. Please try again in a few moments.',
-            retryAfter: statusResponse.headers.get('Retry-After') || '30'
+        } catch (error) {
+          console.error('Task initialization error:', error);
+          task.status = 'FAILED';
+          task.error = error instanceof Error ? error.message : 'Initialization failed';
+          return res.json({
+            status: 'FAILED',
+            error: task.error
           });
         }
-        
-        const errorText = await statusResponse.text();
-        throw new Error(`Failed to check status: ${statusResponse.status} - ${errorText}`);
       }
 
-      const statusData = await statusResponse.json();
-      const status = statusData.data?.status;
+      // If we have a Freepik task ID, check its status
+      if (task.freepikTaskId) {
+        const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/imagen3/${task.freepikTaskId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'x-freepik-api-key': process.env.FREEPIK_API_KEY
+          }
+        });
 
-      console.log(`Task ${taskId} status: ${status}`);
+        if (!statusResponse.ok) {
+          // Handle rate limiting
+          if (statusResponse.status === 429) {
+            return res.status(429).json({ 
+              status: 'RATE_LIMITED',
+              error: 'Rate limit exceeded. Please try again in a few moments.',
+              retryAfter: statusResponse.headers.get('Retry-After') || '30'
+            });
+          }
+          
+          const errorText = await statusResponse.text();
+          throw new Error(`Failed to check status: ${statusResponse.status} - ${errorText}`);
+        }
 
-      if (status === 'COMPLETED') {
-        const generatedImages = statusData.data?.generated || [];
-        if (generatedImages.length > 0) {
-          const imageUrl = generatedImages[0];
+        const statusData = await statusResponse.json();
+        const status = statusData.data?.status;
+
+        console.log(`Freepik task ${task.freepikTaskId} status: ${status}`);
+
+        if (status === 'COMPLETED') {
+          const generatedImages = statusData.data?.generated || [];
+          if (generatedImages.length > 0) {
+            const imageUrl = generatedImages[0];
+            task.imageUrl = imageUrl;
+            task.status = 'COMPLETED';
+
+            return res.json({
+              status: 'COMPLETED',
+              imageUrl
+            });
+          } else {
+            task.status = 'FAILED';
+            task.error = 'Task completed but no images were generated';
+            return res.json({
+              status: 'FAILED',
+              error: task.error
+            });
+          }
+        } else if (status === 'FAILED') {
+          const errorMessage = statusData.data?.error?.message 
+            || statusData.data?.error 
+            || statusData.data?.message 
+            || statusData.message
+            || 'Image generation failed';
+          
+          console.error('Freepik task failed:', errorMessage, 'Full response:', JSON.stringify(statusData));
+          task.status = 'FAILED';
+          task.error = errorMessage;
 
           return res.json({
-            status: 'COMPLETED',
-            imageUrl
+            status: 'FAILED',
+            error: errorMessage
           });
         } else {
-          throw new Error('Task completed but no images were generated');
+          // Still processing (PENDING, PROCESSING, etc.)
+          task.status = status || 'PROCESSING';
+          return res.json({
+            status: task.status,
+            message: 'Image is being generated...'
+          });
         }
-      } else if (status === 'FAILED') {
-        const errorMessage = statusData.data?.error?.message 
-          || statusData.data?.error 
-          || statusData.data?.message 
-          || statusData.message
-          || 'Image generation failed';
-        
-        console.error('Freepik task failed:', errorMessage, 'Full response:', JSON.stringify(statusData));
-
-        return res.json({
-          status: 'FAILED',
-          error: errorMessage
-        });
-      } else {
-        // Still processing (PENDING, PROCESSING, etc.)
-        return res.json({
-          status: status || 'PROCESSING',
-          message: 'Image is being generated...'
-        });
       }
+
+      // Return current task status
+      return res.json({
+        status: task.status,
+        imageUrl: task.imageUrl,
+        error: task.error,
+        message: task.status === 'INITIALIZING' ? 'Initializing image generation...' : 'Processing...'
+      });
 
     } catch (error) {
       console.error('Image status check error:', error);
