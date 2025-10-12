@@ -44,10 +44,12 @@ In Vercel dashboard, go to **Settings > Environment Variables** and add:
 - `VITE_SUPABASE_URL` - Your Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
 
-#### Optional Variables (for full functionality):
-- `BREVO_API_KEY` - For email campaigns (Brevo/SendInBlue)
-- `OPENROUTER_API_KEY` - For AI message generation
-- `FREEPIK_API_KEY` - For AI image generation
+#### Required for AI Features:
+- `OPENROUTER_API_KEY` - For AI message generation (get from https://openrouter.ai/keys)
+- `FREEPIK_API_KEY` - For AI image generation (get from https://www.freepik.com/api)
+
+#### Optional Variables:
+- `BREVO_API_KEY` - For email campaigns (get from https://app.brevo.com/settings/keys/api)
 
 **Important:** Make sure to add these for both **Production** and **Preview** environments.
 

@@ -339,11 +339,16 @@ NOW, step into your role as a master storyteller. Use the PAS framework to gener
           generatedMessage.length <= 160
       };
 
+      const wordCount = generatedMessage.split(/\s+/).filter((word: string) => word.length > 0).length;
+      const isCompliant = compliance.hasBusinessName && compliance.hasLocation && compliance.hasOptOut && compliance.withinLimit;
+
       const aiMessageData = insertAiMessageSchema.parse({
         messageType,
         promotionalIdea,
         generatedMessage,
-        complianceCheck: JSON.stringify(compliance)
+        characterCount: generatedMessage.length,
+        wordCount: wordCount,
+        isCompliant: isCompliant
       });
 
       const savedMessage = await storage.createAiMessage(aiMessageData);
@@ -464,14 +469,18 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
 
       if (!imageResponse.ok) {
         const errorText = await imageResponse.text();
+        console.error('Freepik API error response:', errorText);
         throw new Error(`Freepik API error: ${errorText}`);
       }
 
       const imageData = await imageResponse.json();
+      console.log('Freepik API response:', JSON.stringify(imageData));
+      
       const taskId = imageData.data?.id;
 
       if (!taskId) {
-        throw new Error('No task ID received from Freepik API');
+        console.error('Freepik response structure:', imageData);
+        throw new Error(`No task ID received from Freepik API. Response: ${JSON.stringify(imageData)}`);
       }
 
       let imageUrl = '';
