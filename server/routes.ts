@@ -484,12 +484,7 @@ Output only the final enhanced prompt.`;
           num_images: 1,
           aspect_ratio: 'widescreen_16_9',
           styling: {
-            style: 'photo',
-            effects: {
-              color: 'vibrant',
-              lightning: 'warm',
-              framing: 'cinematic'
-            }
+            style: 'photo'
           },
           person_generation: 'allow_adult',
           safety_settings: 'block_medium_and_above'

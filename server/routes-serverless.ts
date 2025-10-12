@@ -466,12 +466,7 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
           num_images: 1,
           aspect_ratio: 'widescreen_16_9',
           styling: {
-            style: 'photo',
-            effects: {
-              color: 'vibrant',
-              lightning: 'warm',
-              framing: 'cinematic'
-            }
+            style: 'photo'
           },
           person_generation: 'allow_adult',
           safety_settings: 'block_medium_and_above'
@@ -519,6 +514,7 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
         const status = statusData.data?.status;
 
         console.log(`Attempt ${attempts + 1}: Task status is ${status}`);
+        console.log(`Full status data:`, JSON.stringify(statusData));
 
         if (status === 'COMPLETED') {
           const generatedImages = statusData.data?.generated || [];
@@ -529,7 +525,9 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
             throw new Error('Task completed but no images were generated');
           }
         } else if (status === 'FAILED') {
-          throw new Error('Image generation task failed');
+          const errorMessage = statusData.data?.error || statusData.data?.message || 'Unknown error';
+          console.error('Freepik task failed:', errorMessage);
+          throw new Error(`Image generation failed: ${errorMessage}`);
         }
         
         attempts++;
