@@ -464,13 +464,13 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
         body: JSON.stringify({
           prompt: enhancedPrompt,
           num_images: 1,
-          aspect_ratio: 'landscape_16_9',
+          aspect_ratio: 'widescreen_16_9',
           styling: {
-            style: 'realistic',
+            style: 'photo',
             effects: {
               color: 'vibrant',
               lightning: 'warm',
-              framing: 'wide'
+              framing: 'cinematic'
             }
           },
           person_generation: 'allow_adult',

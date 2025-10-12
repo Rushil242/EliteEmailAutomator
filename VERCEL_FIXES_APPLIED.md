@@ -45,13 +45,13 @@ res.json({
 {
   prompt: enhancedPrompt,
   num_images: 1,
-  aspect_ratio: 'landscape_16_9',  // Changed from 'widescreen_16_9'
+  aspect_ratio: 'widescreen_16_9',  // Valid: 'widescreen_16_9', 'square_1_1', 'social_story_9_16', 'traditional_3_4', 'classic_4_3'
   styling: {
-    style: 'realistic',
+    style: 'photo',  // Valid: 'photo', 'digital-art', '3d', 'painting', etc.
     effects: {
       color: 'vibrant',
       lightning: 'warm',
-      framing: 'wide'
+      framing: 'cinematic'  // Valid: 'portrait', 'macro', 'panoramic', 'cinematic', etc.
     }
   },
   person_generation: 'allow_adult',
