@@ -487,8 +487,8 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
       const imageData = await imageResponse.json();
       console.log('Freepik API response:', JSON.stringify(imageData));
       
-      const taskId = imageData.task_id;
-      const taskStatus = imageData.task_status;
+      const taskId = imageData.data?.task_id;
+      const taskStatus = imageData.data?.status;
 
       if (!taskId) {
         console.error('Freepik response structure:', imageData);
@@ -516,12 +516,12 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
         }
 
         const statusData = await statusResponse.json();
-        const status = statusData.task_status;
+        const status = statusData.data?.status;
 
         console.log(`Attempt ${attempts + 1}: Task status is ${status}`);
 
         if (status === 'COMPLETED') {
-          const generatedImages = statusData.generated || [];
+          const generatedImages = statusData.data?.generated || [];
           if (generatedImages.length > 0) {
             imageUrl = generatedImages[0];
             break;

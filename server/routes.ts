@@ -503,7 +503,7 @@ Output only the final enhanced prompt.`;
       }
 
       const imageData = await imageResponse.json();
-      const taskId = imageData.task_id;
+      const taskId = imageData.data?.task_id;
 
       if (!taskId) {
         console.error('Freepik response structure:', imageData);
@@ -532,12 +532,12 @@ Output only the final enhanced prompt.`;
         }
 
         const statusData = await statusResponse.json();
-        const status = statusData.task_status;
+        const status = statusData.data?.status;
 
         console.log(`Attempt ${attempts + 1}: Task status is ${status}`);
         
         if (status === 'COMPLETED') {
-          const generatedImages = statusData.generated || [];
+          const generatedImages = statusData.data?.generated || [];
           if (generatedImages.length > 0) {
             imageUrl = generatedImages[0];
             break;
