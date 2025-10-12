@@ -81,4 +81,7 @@ Preferred communication style: Simple, everyday language.
 - POST /api/campaigns/:id/send - Campaign execution
 - GET /api/campaigns/:id/results - Campaign results
 - POST /api/ai-message - AI message generation
-- POST /api/generate-image - Two-step AI image generation (prompt enhancement + image creation)
+- POST /api/generate-image/start - Initiates image generation (returns task ID immediately)
+- GET /api/generate-image/status/:taskId - Checks image generation status (lazy initialization pattern)
+
+**Serverless Optimization**: Image generation uses a lazy initialization pattern to avoid Vercel free tier timeouts (10-second limit). The `/start` endpoint returns immediately with a task ID, while the first status check performs the heavy operations (prompt enhancement + Freepik submission). This ensures all API calls stay under 10 seconds. In-memory cache tracks task states across the request lifecycle.
