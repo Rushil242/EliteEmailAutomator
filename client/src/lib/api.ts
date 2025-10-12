@@ -38,8 +38,19 @@ export const api = {
     return response.json();
   },
 
-  generateImage: async (data: { imageDescription: string }) => {
-    const response = await apiRequest('POST', '/api/generate-image', data);
+  // Start image generation (returns task ID)
+  startImageGeneration: async (data: { imageDescription: string }) => {
+    const response = await apiRequest('POST', '/api/generate-image/start', data);
+    return response.json();
+  },
+
+  // Check image generation status
+  checkImageStatus: async (taskId: string) => {
+    const response = await fetch(`/api/generate-image/status/${taskId}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to check image status');
+    }
     return response.json();
   }
 };

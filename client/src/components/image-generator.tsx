@@ -14,6 +14,49 @@ export default function ImageGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
+  const pollImageStatus = async (taskId: string, originalPrompt: string, enhancedPrompt: string) => {
+    const maxAttempts = 30;
+    const baseDelay = 2000;
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const statusResult = await api.checkImageStatus(taskId);
+
+        if (statusResult.status === 'COMPLETED' && statusResult.imageUrl) {
+          // Use client-side prompts (no dependency on server cache)
+          setOriginalPrompt(originalPrompt);
+          setEnhancedPrompt(enhancedPrompt);
+          setImageUrl(statusResult.imageUrl);
+          setIsGenerating(false);
+
+          toast({
+            title: "Image Generated",
+            description: "Your AI-powered marketing image is ready",
+          });
+          return;
+        } else if (statusResult.status === 'FAILED') {
+          throw new Error(statusResult.error || 'Image generation failed');
+        } else if (statusResult.status === 'RATE_LIMITED') {
+          const retryAfter = parseInt(statusResult.retryAfter || '30') * 1000;
+          await new Promise(resolve => setTimeout(resolve, retryAfter));
+          attempts++; // FIXED: Increment attempts to prevent infinite loop
+          continue;
+        }
+
+        // Exponential backoff with max 8 seconds
+        const delay = Math.min(baseDelay * Math.pow(1.5, attempts), 8000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        attempts++;
+      } catch (error) {
+        setIsGenerating(false);
+        throw error;
+      }
+    }
+
+    throw new Error('Image generation timed out. Please try again.');
+  };
+
   const handleGenerate = async () => {
     if (!imageDescription.trim()) {
       toast({
@@ -26,30 +69,29 @@ export default function ImageGenerator() {
 
     setIsGenerating(true);
     try {
-      const result: {
-        originalPrompt: string;
-        enhancedPrompt: string;
-        imageUrl: string;
-      } = await api.generateImage({
+      // Step 1: Start image generation
+      const startResult = await api.startImageGeneration({
         imageDescription
       });
 
-      setOriginalPrompt(result.originalPrompt);
-      setEnhancedPrompt(result.enhancedPrompt);
-      setImageUrl(result.imageUrl);
+      if (!startResult.taskId) {
+        throw new Error('No task ID received from server');
+      }
 
-      toast({
-        title: "Image Generated",
-        description: "Your AI-powered marketing image is ready",
-      });
+      // Step 2: Poll for completion
+      await pollImageStatus(
+        startResult.taskId,
+        startResult.originalPrompt,
+        startResult.enhancedPrompt
+      );
+
     } catch (error) {
+      setIsGenerating(false);
       toast({
         title: "Generation Failed",
         description: error instanceof Error ? error.message : "Failed to generate image",
         variant: "destructive",
       });
-    } finally {
-      setIsGenerating(false);
     }
   };
 

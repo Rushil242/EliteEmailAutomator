@@ -389,19 +389,18 @@ NOW, step into your role as a master storyteller. Use the PAS framework to gener
     }
   });
 
-  // Generate AI image
-  app.post("/api/generate-image", async (req, res) => {
+  // Start image generation (returns task ID immediately)
+  app.post("/api/generate-image/start", async (req, res) => {
     try {
-      // Check if API keys are configured
-      if (!process.env.OPENROUTER_API_KEY) {
+      if (!process.env.FREEPIK_API_KEY) {
         return res.status(503).json({ 
-          error: "AI service not configured. Please add OPENROUTER_API_KEY to environment variables." 
+          error: "Image generation service not configured. Please add FREEPIK_API_KEY to environment variables." 
         });
       }
 
-      if (!process.env.FREEPIK_API_KEY) {
+      if (!process.env.OPENROUTER_API_KEY) {
         return res.status(503).json({ 
-          error: "Image service not configured. Please add FREEPIK_API_KEY to environment variables." 
+          error: "AI service not configured. Please add OPENROUTER_API_KEY to environment variables." 
         });
       }
 
@@ -411,40 +410,47 @@ NOW, step into your role as a master storyteller. Use the PAS framework to gener
         return res.status(400).json({ error: "Image description is required" });
       }
 
-      // Step 1: Enhance prompt using DeepSeek
-      const enhancementSystemPrompt = `You are a senior prompt engineer specializing in Google Imagen 3 prompts for India’s top edtech brands. Your role is to transform a single-line marketing idea into a highly focused, versatile image prompt that drives engagement and aligns with best practices from leading edtech in india
+      const promptEnhancementSystemPrompt = `You are an expert AI image prompt engineer specializing in Google Imagen 3. Your task is to transform simple user descriptions into detailed, professional prompts optimized for Google Imagen 3's text-to-image generation.
 
-MARKETING IMAGE GUIDELINES:
-- Adapt to any campaign type: discounts, festive offers, course launches, success stories, testimonials, referral drives, or event announcements  
-- Reflect brand professionalism with clean, modern design: uncluttered layouts, strong focal points, balanced negative space  
-- Include relevant elements: product screenshots, certificates, trophies, animated icons, or abstract branding shapes—depending on idea  
-- Use emotive cues: confident expressions, celebratory gestures, teamwork, aspiration, or curiosity  
-- Ensure versatility: can feature students, instructors, icons, text overlays, symbolic imagery (e.g., rising arrows for growth, clocks for time-limited offers)  
-- Maintain Indian market appeal: bright yet natural lighting, clear typography areas, culturally neutral backgrounds  
+GOOGLE IMAGEN 3 CHARACTERISTICS:
+- Excels at photorealistic imagery and artistic styles
+- Strong understanding of composition, lighting, and perspective
+- Best with clear, descriptive language and specific visual details
+- Supports various aspect ratios and style modifiers
 
-TECHNICAL OPTIMIZATION:
-- Resolution: Ultra HD, 300 dpi  
-- Composition: rule of thirds or centered focus, adjustable per idea  
-- Lighting: even diffused daylight style or spotlight emphasis  
-- Depth of Field: selective focus to highlight main subject  
-- Color Palette: brand-aligned accent colors with high contrast for call-to-action  
-- Style: photorealistic with graphic design polish, or stylized illustration if idea demands
+YOUR TRANSFORMATION PROCESS:
+1. Analyze the user's simple description
+2. Expand it with rich visual details:
+   - Specific lighting conditions (golden hour, soft diffused, dramatic shadows)
+   - Color palette and mood (warm tones, vibrant, muted pastels)
+   - Composition and perspective (wide angle, close-up, rule of thirds)
+   - Artistic style if applicable (photorealistic, digital art, illustration)
+   - Texture and material details (smooth, glossy, textured)
 
-USER IDEA: “${imageDescription}”
+EDUCATIONAL MARKETING CONTEXT:
+- Images are for Elite IIT Coaching Institute marketing
+- Target audience: Students (15-25 years), parents, education seekers
+- Tone: Professional, inspiring, trustworthy, modern
+- Common themes: Education, success, technology, youth, achievement
 
-TASK:
-Craft a detailed Google Imagen 3 prompt that:
-1. Interprets the user’s marketing idea accurately  
-2. Selects appropriate visual elements (people, icons, symbols, backgrounds)  
-3. Specifies detailed composition, lighting, and style  
-4. Aligns with Indian edtech marketing standards  
-5. Is ready for immediate generation by Imagen 3  
+OUTPUT REQUIREMENTS:
+1. Return ONLY the enhanced prompt text
+2. NO explanations, NO meta-commentary
+3. Keep prompts concise but descriptive (50-150 words)
+4. Use natural, flowing language
+5. Include relevant marketing context for educational institution
 
-Output only the final enhanced prompt.`;
+EXAMPLES:
+User: "Students studying"
+Enhanced: "A diverse group of focused students studying together in a modern, well-lit classroom, warm afternoon sunlight streaming through large windows, creating a motivating and collaborative atmosphere. Contemporary educational setting with clean lines, students engaged with laptops and books, expressions of concentration and determination. Professional photography style, shallow depth of field focusing on students in foreground, soft bokeh background, vibrant yet professional color grading emphasizing blues and warm oranges."
 
+User: "Success celebration"
+Enhanced: "Joyful students celebrating academic success, throwing graduation caps in the air against a bright blue sky, golden hour lighting creating a warm, triumphant atmosphere. Wide-angle shot capturing the energy and emotion, diverse group of young achievers in graduation attire, genuine smiles and expressions of achievement. Professional event photography style, sharp focus on celebrating students, dynamic composition with upward movement, vibrant natural colors, inspiring and uplifting mood perfect for educational marketing."
 
+Now, enhance the following user description into a Google Imagen 3 optimized prompt:`;
 
-      const enhanceResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      // Step 1: Enhance prompt using OpenRouter
+      const promptResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -455,29 +461,29 @@ Output only the final enhanced prompt.`;
         body: JSON.stringify({
           model: 'meta-llama/llama-3.3-8b-instruct:free',
           messages: [
-            { role: 'system', content: enhancementSystemPrompt },
+            { role: 'system', content: promptEnhancementSystemPrompt },
             { role: 'user', content: imageDescription }
           ],
-          max_tokens: 500,
-          temperature: 0.8
+          temperature: 0.8,
+          max_tokens: 300
         })
       });
 
-      if (!enhanceResponse.ok) {
-        const errorData = await enhanceResponse.json().catch(() => ({}));
-        const errorMessage = errorData.error?.message || enhanceResponse.statusText;
-        throw new Error(`Prompt enhancement error: ${errorMessage}`);
+      if (!promptResponse.ok) {
+        const errorText = await promptResponse.text();
+        throw new Error(`Prompt enhancement failed: ${promptResponse.statusText} - ${errorText}`);
       }
 
-      const enhanceData = await enhanceResponse.json();
-      const enhancedPrompt = enhanceData.choices[0]?.message?.content || imageDescription;
+      const promptData = await promptResponse.json();
+      const enhancedPrompt = promptData.choices[0]?.message?.content || imageDescription;
 
-      // Step 2: Generate image using Freepik API with Google Imagen 3
+      // Step 2: Submit to Freepik API
       const imageResponse = await fetch('https://api.freepik.com/v1/ai/text-to-image/imagen3', {
         method: 'POST',
         headers: {
-          'x-freepik-api-key': process.env.FREEPIK_API_KEY,
-          'Content-Type': 'application/json'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'x-freepik-api-key': process.env.FREEPIK_API_KEY
         },
         body: JSON.stringify({
           prompt: enhancedPrompt,
@@ -492,74 +498,120 @@ Output only the final enhanced prompt.`;
       });
 
       if (!imageResponse.ok) {
-        const errorData = await imageResponse.json().catch(() => ({}));
-        const errorMessage = errorData.message || imageResponse.statusText;
-        throw new Error(`Image generation error: ${errorMessage}`);
+        const errorText = await imageResponse.text();
+        console.error('Freepik API error response:', errorText);
+        throw new Error(`Freepik API error: ${imageResponse.status} - ${errorText}`);
       }
 
       const imageData = await imageResponse.json();
+      console.log('Freepik API response:', JSON.stringify(imageData));
+      
       const taskId = imageData.data?.task_id;
+      const taskStatus = imageData.data?.status;
 
       if (!taskId) {
         console.error('Freepik response structure:', imageData);
-        throw new Error(`No task ID returned from Freepik API. Response: ${JSON.stringify(imageData)}`);
+        throw new Error(`No task ID received from Freepik API. Response: ${JSON.stringify(imageData)}`);
       }
 
-      console.log(`Image generation started. Task ID: ${taskId}`);
+      console.log(`Image generation started. Task ID: ${taskId}, Status: ${taskStatus}`);
 
-      // Poll for task completion
-      let imageUrl = '';
-      let attempts = 0;
-      const maxAttempts = 60; // 60 attempts * 2 seconds = 2 minutes max
-
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between polls
-
-        const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/imagen3/${taskId}`, {
-          method: 'GET',
-          headers: {
-            'x-freepik-api-key': process.env.FREEPIK_API_KEY
-          }
-        });
-
-        if (!statusResponse.ok) {
-          throw new Error(`Failed to check task status: ${statusResponse.statusText}`);
-        }
-
-        const statusData = await statusResponse.json();
-        const status = statusData.data?.status;
-
-        console.log(`Attempt ${attempts + 1}: Task status is ${status}`);
-        
-        if (status === 'COMPLETED') {
-          const generatedImages = statusData.data?.generated || [];
-          if (generatedImages.length > 0) {
-            imageUrl = generatedImages[0];
-            break;
-          } else {
-            throw new Error('Task completed but no images were generated');
-          }
-        } else if (status === 'FAILED') {
-          throw new Error('Image generation task failed');
-        }
-        
-        attempts++;
-      }
-
-      if (!imageUrl) {
-        throw new Error('Image generation timed out after 2 minutes');
-      }
-
+      // Return immediately with task ID and prompts (client will pass these during polling)
       res.json({
+        taskId,
         originalPrompt: imageDescription,
         enhancedPrompt,
-        imageUrl
+        status: taskStatus || 'PENDING'
       });
 
     } catch (error) {
-      console.error('Image generation error:', error);
+      console.error('Image generation start error:', error);
       res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to generate image" 
+        error: error instanceof Error ? error.message : "Failed to start image generation" 
+      });
+    }
+  });
+
+  // Check image generation status (stateless - no cache dependency)
+  app.get("/api/generate-image/status/:taskId", async (req, res) => {
+    try {
+      if (!process.env.FREEPIK_API_KEY) {
+        return res.status(503).json({ 
+          error: "Image generation service not configured." 
+        });
+      }
+
+      const { taskId } = req.params;
+
+      if (!taskId) {
+        return res.status(400).json({ error: "Task ID is required" });
+      }
+
+      // Check status from Freepik (no cache dependency for serverless compatibility)
+      const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/imagen3/${taskId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'x-freepik-api-key': process.env.FREEPIK_API_KEY
+        }
+      });
+
+      if (!statusResponse.ok) {
+        // Handle rate limiting
+        if (statusResponse.status === 429) {
+          return res.status(429).json({ 
+            status: 'RATE_LIMITED',
+            error: 'Rate limit exceeded. Please try again in a few moments.',
+            retryAfter: statusResponse.headers.get('Retry-After') || '30'
+          });
+        }
+        
+        const errorText = await statusResponse.text();
+        throw new Error(`Failed to check status: ${statusResponse.status} - ${errorText}`);
+      }
+
+      const statusData = await statusResponse.json();
+      const status = statusData.data?.status;
+
+      console.log(`Task ${taskId} status: ${status}`);
+
+      if (status === 'COMPLETED') {
+        const generatedImages = statusData.data?.generated || [];
+        if (generatedImages.length > 0) {
+          const imageUrl = generatedImages[0];
+
+          return res.json({
+            status: 'COMPLETED',
+            imageUrl
+          });
+        } else {
+          throw new Error('Task completed but no images were generated');
+        }
+      } else if (status === 'FAILED') {
+        const errorMessage = statusData.data?.error?.message 
+          || statusData.data?.error 
+          || statusData.data?.message 
+          || statusData.message
+          || 'Image generation failed';
+        
+        console.error('Freepik task failed:', errorMessage, 'Full response:', JSON.stringify(statusData));
+
+        return res.json({
+          status: 'FAILED',
+          error: errorMessage
+        });
+      } else {
+        // Still processing (PENDING, PROCESSING, etc.)
+        return res.json({
+          status: status || 'PROCESSING',
+          message: 'Image is being generated...'
+        });
+      }
+
+    } catch (error) {
+      console.error('Image status check error:', error);
+      res.status(500).json({ 
+        status: 'ERROR',
+        error: error instanceof Error ? error.message : "Failed to check image status" 
       });
     }
   });
