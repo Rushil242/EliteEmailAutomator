@@ -14,8 +14,8 @@ export default function ImageGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  const pollImageStatus = async (taskId: string, originalPrompt: string, enhancedPrompt: string) => {
-    const maxAttempts = 30;
+  const pollImageStatus = async (taskId: string, originalPrompt: string) => {
+    const maxAttempts = 40;
     const baseDelay = 2000;
     let attempts = 0;
 
@@ -24,9 +24,9 @@ export default function ImageGenerator() {
         const statusResult = await api.checkImageStatus(taskId);
 
         if (statusResult.status === 'COMPLETED' && statusResult.imageUrl) {
-          // Use client-side prompts (no dependency on server cache)
+          // Use enhanced prompt from status response (generated during lazy initialization)
           setOriginalPrompt(originalPrompt);
-          setEnhancedPrompt(enhancedPrompt);
+          setEnhancedPrompt(statusResult.enhancedPrompt || originalPrompt);
           setImageUrl(statusResult.imageUrl);
           setIsGenerating(false);
 
@@ -40,7 +40,7 @@ export default function ImageGenerator() {
         } else if (statusResult.status === 'RATE_LIMITED') {
           const retryAfter = parseInt(statusResult.retryAfter || '30') * 1000;
           await new Promise(resolve => setTimeout(resolve, retryAfter));
-          attempts++; // FIXED: Increment attempts to prevent infinite loop
+          attempts++;
           continue;
         }
 
@@ -78,11 +78,10 @@ export default function ImageGenerator() {
         throw new Error('No task ID received from server');
       }
 
-      // Step 2: Poll for completion
+      // Step 2: Poll for completion (enhanced prompt will be fetched during polling)
       await pollImageStatus(
         startResult.taskId,
-        startResult.originalPrompt,
-        startResult.enhancedPrompt
+        startResult.originalPrompt
       );
 
     } catch (error) {

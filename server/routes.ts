@@ -648,7 +648,8 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
 
             return res.json({
               status: 'COMPLETED',
-              imageUrl
+              imageUrl,
+              enhancedPrompt: task.enhancedPrompt || task.originalPrompt
             });
           } else {
             task.status = 'FAILED';
