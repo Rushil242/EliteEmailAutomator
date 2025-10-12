@@ -354,9 +354,14 @@ NOW, step into your role as a master storyteller. Use the PAS framework to gener
       const savedMessage = await storage.createAiMessage(aiMessageData);
 
       res.json({
-        message: generatedMessage,
-        compliance,
-        messageId: savedMessage.id
+        id: savedMessage.id,
+        messageType: savedMessage.messageType,
+        promotionalIdea: savedMessage.promotionalIdea,
+        generatedMessage: savedMessage.generatedMessage,
+        characterCount: savedMessage.characterCount,
+        wordCount: savedMessage.wordCount,
+        isCompliant: savedMessage.isCompliant,
+        compliance
       });
 
     } catch (error) {
@@ -449,7 +454,7 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
       const promptData = await promptResponse.json();
       const enhancedPrompt = promptData.choices[0]?.message?.content || imageDescription;
 
-      const imageResponse = await fetch('https://api.freepik.com/v1/ai/text-to-image', {
+      const imageResponse = await fetch('https://api.freepik.com/v1/ai/text-to-image/imagen3', {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -458,12 +463,18 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
         },
         body: JSON.stringify({
           prompt: enhancedPrompt,
-          image: {
-            size: 'widescreen_16_9'
-          },
+          num_images: 1,
+          aspect_ratio: 'landscape_16_9',
           styling: {
-            model_version: 'imagine-v1'
-          }
+            style: 'realistic',
+            effects: {
+              color: 'vibrant',
+              lightning: 'warm',
+              framing: 'wide'
+            }
+          },
+          person_generation: 'allow_adult',
+          safety_settings: 'block_medium_and_above'
         })
       });
 
@@ -476,12 +487,15 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
       const imageData = await imageResponse.json();
       console.log('Freepik API response:', JSON.stringify(imageData));
       
-      const taskId = imageData.data?.id;
+      const taskId = imageData.task_id;
+      const taskStatus = imageData.task_status;
 
       if (!taskId) {
         console.error('Freepik response structure:', imageData);
         throw new Error(`No task ID received from Freepik API. Response: ${JSON.stringify(imageData)}`);
       }
+
+      console.log(`Image generation started. Task ID: ${taskId}, Status: ${taskStatus}`);
 
       let imageUrl = '';
       let attempts = 0;
@@ -490,7 +504,7 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
       while (attempts < maxAttempts && !imageUrl) {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
-        const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/${taskId}`, {
+        const statusResponse = await fetch(`https://api.freepik.com/v1/ai/text-to-image/imagen3/${taskId}`, {
           headers: {
             'Accept': 'application/json',
             'x-freepik-api-key': process.env.FREEPIK_API_KEY!
@@ -502,10 +516,12 @@ Now, enhance the following user description into a Google Imagen 3 optimized pro
         }
 
         const statusData = await statusResponse.json();
-        const status = statusData.data?.status;
+        const status = statusData.task_status;
+
+        console.log(`Attempt ${attempts + 1}: Task status is ${status}`);
 
         if (status === 'COMPLETED') {
-          const generatedImages = statusData.data?.generated || [];
+          const generatedImages = statusData.generated || [];
           if (generatedImages.length > 0) {
             imageUrl = generatedImages[0];
             break;

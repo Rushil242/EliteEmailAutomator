@@ -482,7 +482,17 @@ Output only the final enhanced prompt.`;
         body: JSON.stringify({
           prompt: enhancedPrompt,
           num_images: 1,
-          aspect_ratio: 'widescreen_16_9'
+          aspect_ratio: 'landscape_16_9',
+          styling: {
+            style: 'realistic',
+            effects: {
+              color: 'vibrant',
+              lightning: 'warm',
+              framing: 'wide'
+            }
+          },
+          person_generation: 'allow_adult',
+          safety_settings: 'block_medium_and_above'
         })
       });
 
@@ -493,11 +503,14 @@ Output only the final enhanced prompt.`;
       }
 
       const imageData = await imageResponse.json();
-      const taskId = imageData.data?.task_id || imageData.task_id;
+      const taskId = imageData.task_id;
 
       if (!taskId) {
-        throw new Error('No task ID returned from Freepik API');
+        console.error('Freepik response structure:', imageData);
+        throw new Error(`No task ID returned from Freepik API. Response: ${JSON.stringify(imageData)}`);
       }
+
+      console.log(`Image generation started. Task ID: ${taskId}`);
 
       // Poll for task completion
       let imageUrl = '';
@@ -519,10 +532,12 @@ Output only the final enhanced prompt.`;
         }
 
         const statusData = await statusResponse.json();
-        const status = statusData.data?.status;
+        const status = statusData.task_status;
+
+        console.log(`Attempt ${attempts + 1}: Task status is ${status}`);
         
         if (status === 'COMPLETED') {
-          const generatedImages = statusData.data?.generated || [];
+          const generatedImages = statusData.generated || [];
           if (generatedImages.length > 0) {
             imageUrl = generatedImages[0];
             break;
